@@ -6,7 +6,8 @@ Microbiome data science is an interdisciplinary field focused on analyzing and i
 
 
 # Key Components of Microbiome Data Science
-1. Data Generation
+
+# Data Generation
 •	16S rRNA sequencing: Taxonomic profiling (mostly bacterial)
 •	Shotgun metagenomics: Functional and taxonomic profiling
 •	Metatranscriptomics: RNA-based gene expression
