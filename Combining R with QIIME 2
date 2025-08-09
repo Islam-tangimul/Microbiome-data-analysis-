@@ -1,0 +1,78 @@
+Combining R with QIIME 2 is a powerful approach because QIIME 2 handles the heavy microbiome data processing.
+R offers flexible statistical analysis and customized visualization (especially with packages like phyloseq, microbiome, vegan, and ggplot2
+
+# How to Combine R with QIIME 2
+Step 1: Process your microbiome data in QIIME 2 as usual
+Import, quality control, taxonomic assignment, diversity analyses, etc.
+Export QIIME 2 artifacts (feature table, taxonomy, phylogenetic tree, metadata) to formats that R can read.
+
+Step 2: Export data from QIIME 2
+Use the QIIME 2 export commands to get raw files:
+Export feature table as BIOM:
+qiime tools export \
+  --input-path table.qza \
+  --output-path exported-feature-table
+This creates feature-table.biom.
+# Export taxonomy:
+qiime tools export \
+  --input-path taxonomy.qza \
+  --output-path exported-taxonomy
+
+You get taxonomy.tsv.
+
+Export phylogenetic tree:
+qiime tools export \
+  --input-path rooted-tree.qza \
+  --output-path exported-tree
+You get a tree.nwk file.
+
+Step 3: Import data into R
+First, install and load phyloseq package (and dependencies):
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("phyloseq")
+library(phyloseq)
+
+Step 4: Load exported files into R as phyloseq objects
+
+library(phyloseq)
+library(biomformat)  # for reading BIOM files
+
+# Import feature table (BIOM)
+otu_table <- import_biom("path/to/exported-feature-table/feature-table.biom")
+
+# Import taxonomy table
+tax_table <- read.table("path/to/exported-taxonomy/taxonomy.tsv", header=TRUE, sep="\t", row.names=1, comment.char="", quote="")
+
+# Convert taxonomy to matrix and phyloseq format
+tax_mat <- as.matrix(tax_table[, -1])  # remove confidence column if present
+tax <- tax_table(tax_mat)
+
+# Import sample metadata
+sample_data <- read.table("path/to/sample-metadata.tsv", header=TRUE, sep="\t", row.names=1, comment.char="", quote="")
+sdata <- sample_data(sample_data)
+
+# Import phylogenetic tree
+library(ape)
+tree <- read_tree("path/to/exported-tree/tree.nwk")
+
+# Create phyloseq object
+ps <- phyloseq(otu_table, tax, sdata, tree)
+
+Step 5: Use R packages for downstream analysis and visualization
+Examples:
+Plot alpha diversity:
+
+plot_richness(ps, x="disease_status", measures=c("Shannon", "Observed"))
+Ordination (PCoA):
+
+ordination <- ordinate(ps, method="PCoA", distance="unifrac")
+plot_ordination(ps, ordination, color="disease_status")
+Differential abundance with DESeq2 (if counts available):
+
+library(DESeq2)
+ps_dds <- phyloseq_to_deseq2(ps, ~ disease_status)
+ps_dds <- DESeq(ps_dds)
+res <- results(ps_dds)
+
