@@ -1,0 +1,84 @@
+QIIME 2 is one of the most widely used platforms for microbiome data analysis, especially for 16S rRNA gene amplicon sequencing, shotgun metagenomics, and ITS fungal data.
+
+1. Set up QIIME 2
+Install QIIME 2 in a conda environment:
+wget https://data.qiime2.org/distro/core/qiime2-2025.2-py39-linux-conda.yml
+conda env create -n qiime2-2025.2 --file qiime2-2025.2-py39-linux-conda.yml
+conda activate qiime2-2025.2
+
+# Confirm installation:
+qiime --help
+
+2. Import Your Data
+QIIME 2 uses .qza (artifacts) and .qzv (visualizations) as its file formats.
+
+qiime tools import \
+  --type 'SampleData[PairedEndSequencesWithQuality]' \
+  --input-path manifest.csv \
+  --output-path demux-paired-end.qza \
+  --input-format PairedEndFastqManifestPhred33V2
+
+3. Quality Control & Denoising
+Denoising removes sequencing errors and produces amplicon sequence variants (ASVs).
+
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs demux-paired-end.qza \
+  --p-trunc-len-f 240 \
+  --p-trunc-len-r 200 \
+  --o-table table.qza \
+  --o-representative-sequences rep-seqs.qza \
+  --o-denoising-stats denoising-stats.qza
+
+** You choose --p-trunc-len values based on your quality plot.
+
+4. Assign Taxonomy
+Download a pre-trained classifier (e.g., SILVA, Greengenes) and run:
+qiime feature-classifier classify-sklearn \
+  --i-classifier silva-138-99-nb-classifier.qza \
+  --i-reads rep-seqs.qza \
+  --o-classification taxonomy.qza
+
+Visualize:
+qiime metadata tabulate \
+  --m-input-file taxonomy.qza \
+  --o-visualization taxonomy.qzv
+
+5. Create Phylogenetic Tree
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences rep-seqs.qza \
+  --o-alignment aligned-rep-seqs.qza \
+  --o-masked-alignment masked-aligned-rep-seqs.qza \
+  --o-tree unrooted-tree.qza \
+  --o-rooted-tree rooted-tree.qza
+
+6. Diversity Analysis
+qiime diversity core-metrics-phylogenetic \
+  --i-phylogeny rooted-tree.qza \
+  --i-table table.qza \
+  --p-sampling-depth 10000 \
+  --m-metadata-file sample-metadata.tsv \
+  --output-dir core-metrics-results
+
+This produces:
+Alpha diversity (Shannon, Observed ASVs, Faith’s PD)
+Beta diversity (PCoA plots of UniFrac and Bray-Curtis distances)
+
+7. Differential Abundance (Optional)
+For group comparisons:
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/shannon_vector.qza \
+  --m-metadata-file sample-metadata.tsv \
+  --o-visualization core-metrics-results/shannon-group-significance.qzv
+You can also use ANCOM for taxa-level differential abundance.
+
+8. Export & Visualize
+To view .qzv files:
+qiime tools view taxonomy.qzv
+Or use https://view.qiime2.org
+Export data for external plotting:
+qiime tools export --input-path table.qza --output-path exported-table
+
+
+
+
+
