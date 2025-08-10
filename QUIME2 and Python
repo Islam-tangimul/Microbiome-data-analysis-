@@ -1,0 +1,53 @@
+1. Using QIIME 2's Python API (Artifact API)
+QIIME 2 is written in Python, and it exposes a Python interface so you can run QIIME 2 analyses inside your Python scripts or Jupyter notebooks instead of only using the command line.
+
+Steps:
+Install QIIME 2 with Python support
+QIIME 2 works best inside a conda environment:
+#bash
+conda create -n qiime2-2025.2 python=3.10
+conda activate qiime2-2025.2
+conda install -c qiime2/label/r2025.2 qiime2
+(Replace 2025.2 with the actual current release)
+
+2. Import QIIME 2 in Python
+#import
+import qiime2
+from qiime2 import Artifact
+
+3. Load artifacts and run methods
+
+# Load an artifact
+table = Artifact.load('feature-table.qza')
+
+# Import a QIIME 2 method
+from qiime2.plugins.diversity.methods import alpha
+
+# Run alpha diversity analysis
+alpha_result = alpha(table=table, metric='shannon')
+alpha_result.alpha_diversity.save('shannon-diversity.qza')
+
+
+4. Work interactively in Jupyter Notebook
+# bash
+conda install jupyter
+jupyter notebook
+Then run QIIME 2 functions directly in Python cells.
+
+5. Using QIIME 2 Outputs in Custom Python Scripts
+You can also:
+Export .qza or .qzv files from QIIME 2 using qiime tools export
+Load the exported files (often BIOM, TSV, FASTA) into Python using libraries like:
+pandas (tables/metadata)
+biom-format (feature tables)
+scikit-bio (phylogenetic trees, sequences)
+matplotlib/seaborn for visualization
+
+Example:
+import pandas as pd
+# Load exported QIIME 2 data
+df = pd.read_csv('feature-table.tsv', sep='\t', skiprows=1)
+print(df.head())
+
+
+
